@@ -19,7 +19,7 @@ namespace Yosymfony\ParserUtils;
 class Token
 {
     protected $value;
-    protected $id;
+    protected $id; // integer identity!
     protected $line;
 
     /**
@@ -50,9 +50,9 @@ class Token
     /**
      * Returns the name of the token
      *
-     * @return string
+     * @return int
      */
-    public function getId() : string
+    public function getId() : int
     {
         return $this->id;
     }

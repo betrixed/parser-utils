@@ -34,10 +34,23 @@ class TokenStream
     
     public function peekNext() : int
     {
-        $test = $this->tokens[$this->index+1] ?? null;
-        return (is_null($test) ? 0 : $test->getId());
+        $idx = $this->index+1;
+        return ($idx < count($this->tokens)) ? $this->tokens[$idx]->getId() : 0;
+
     }
-    
+    /**
+     * Moves the pointer one token forward
+     * @return int The next token Id, or 0
+     */    
+    public function movePeekNext() : int{
+        $ct = count($this->tokens);
+        if ($this->index < $ct) {
+            $this->index++;
+            $idx = $this->index + 1;
+            return ($idx < $ct) ? $this->tokens[$idx]->getId() : 0;
+        }
+        return 0;
+    }
     /**
      * Moves the pointer one token forward
      *
