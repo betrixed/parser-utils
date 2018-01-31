@@ -12,7 +12,11 @@ namespace Yosymfony\ParserUtils;
 class BasicLexer implements LexerInterface
 {
     protected $newlineTokenName = 'T_NEWLINE';
+    protected $newlineTokenId = -1;
+    
     protected $eosTokenName = 'T_EOS';
+    protected $eosTokenId = -1;
+    
     protected $activateNewlineToken = false;
     protected $activateEOSToken = false;
     protected $terminals = [];
@@ -64,12 +68,12 @@ class BasicLexer implements LexerInterface
      *
      * @throws InvalidArgumentException If the name is empty
      */
-    public function setNewlineTokenName(string $name) : BasicLexer
+    public function setNewlineTokenName(string $name, int $id) : BasicLexer
     {
         if (strlen($name) == 0) {
             throw new \InvalidArgumentException('The name of the newline token must be not empty.');
         }
-
+        $this->newlineTokenId = $id;
         $this->newlineTokenName = $name;
 
         return $this;
@@ -84,12 +88,12 @@ class BasicLexer implements LexerInterface
      *
      * @throws InvalidArgumentException If the name is empty
      */
-    public function setEosTokenName(string $name) : BasicLexer
+    public function setEosTokenName(string $name, int $id) : BasicLexer
     {
         if (strlen($name) == 0) {
             throw new \InvalidArgumentException('The name of the EOS token must be not empty.');
         }
-
+        $this->eosTokenId = $id;
         $this->eosTokenName = $name;
 
         return $this;
@@ -122,12 +126,12 @@ class BasicLexer implements LexerInterface
             }
 
             if ($this->activateNewlineToken && ++$counter < $totalLines) {
-                $tokens[] = new Token("\n", $this->newlineTokenName, $lineNumber);
+                $tokens[] = new Token("\n", $this->newlineTokenId, $lineNumber);
             }
         }
 
         if ($this->activateEOSToken) {
-            $tokens[] = new Token('', $this->eosTokenName, $lineNumber);
+            $tokens[] = new Token('', $this->eosTokenId, $lineNumber);
         }
 
         return new TokenStream($tokens);

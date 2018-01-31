@@ -9,23 +9,31 @@
  */
 namespace Yosymfony\ParserUtils;
 
+/** Tokens should have a numeric id, becahse comparison of numeric token ids and storage
+ *  space are optimal, even in interpreted languages like php, where I expect strings will be referenced
+ *  counted.  I don't think php integer values are reference counted.
+ *  For debugging messages, use a lookup table to get string names for ids
+ *  Unfortunately some other class must provide the id to name conversion.
+ *  
+ */
 class Token
 {
     protected $value;
-    protected $name;
+    protected $id;
     protected $line;
 
     /**
      * Constructor.
      *
      * @param string $value The value of the token
-     * @param string $name The name of the token. e.g: T_BRAKET_BEGIN
-     * @param int $line Line of the code in where the token is found
+     * @param int $id The constant id of the token. e.g: T_BRAKET_BEGIN
+     * @param int $line Line of the code in where the token is found.
+     *
      */
-    public function __construct(string $value, string $name, int $line)
+    public function __construct(string $value, int $id, int $line)
     {
         $this->value = $value;
-        $this->name = $name;
+        $this->id = $id;
         $this->line = $line;
     }
 
@@ -44,9 +52,9 @@ class Token
      *
      * @return string
      */
-    public function getName() : string
+    public function getId() : string
     {
-        return $this->name;
+        return $this->id;
     }
 
     /**
@@ -62,8 +70,8 @@ class Token
     public function __toString() : string
     {
         return sprintf(
-            "[\n name: %s\n value:%s\n line: %s\n]",
-            $this->name,
+            "[\n id: %s\n value:%s\n line: %s\n]",
+            $this->id,
             $this->value,
             $this->line
         );

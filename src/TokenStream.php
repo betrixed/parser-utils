@@ -9,6 +9,8 @@
  */
 namespace Yosymfony\ParserUtils;
 
+use Yosymfony\Toml\Lexer;
+
 class TokenStream
 {
     protected $tokens;
@@ -24,6 +26,18 @@ class TokenStream
         $this->tokens = $tokens;
     }
 
+    /**
+     * This can't be implemented by using other access methods
+     * Therefore its a fundamental operation.
+       Does not change parser internal state
+     */
+    
+    public function peekNext() : int
+    {
+        $test = $this->tokens[$this->index+1] ?? null;
+        return (is_null($test) ? 0 : $test->getId());
+    }
+    
     /**
      * Moves the pointer one token forward
      *
@@ -44,19 +58,19 @@ class TokenStream
      *
      * @throws SyntaxErrorException If the next token does not match
      */
-    public function matchNext(string $tokenName) : string
+    public function matchNext(int $tokenId) : string
     {
         $token = $this->moveNext();
         --$this->index;
 
-        if ($token->getName() == $tokenName) {
+        if ($token->getId() == $tokenId) {
             return $this->moveNext()->getValue();
         }
 
         throw new SyntaxErrorException(sprintf(
             'Syntax error: expected token with name "%s" instead of "%s" at line %s.',
-            $tokenName,
-            $token->getName(),
+            Lexer::tokenName($tokenId),
+            Lexer::tokenName($token->getId()),
             $token->getLine()));
     }
 
@@ -65,11 +79,20 @@ class TokenStream
      * This method moves the pointer "n" tokens forward until the last one
      * that match with the token name
      *
-     * @param string $tokenName The name of the token
+     * @param int $tokenId The name of the token
+     * @param int $maxCount If $maxCount > 0, limits number of possible skips.
+     * @return number of tokens skipped
      */
-    public function skipWhile(string $tokenName) : void
+    public function skipWhile(int $tokenId, int $maxCount=0) : int
     {
-        $this->skipWhileAny([$tokenName]);
+        $skipped = 0;
+        while($this->peekNext() === $tokenId) {
+            $this->index++;
+            $skipped++;
+            if (($maxCount > 0) && ($skipped >= $maxCount))
+                break;
+        }
+        return $skipped;
     }
 
     /**
@@ -79,10 +102,10 @@ class TokenStream
      *
      * @param string[] $tokenNames List of token names
      */
-    public function skipWhileAny(array $tokenNames) : void
+    public function skipWhileAny(array $tokenIds) : void
     {
-        while ($this->isNextAny($tokenNames)) {
-            $this->moveNext();
+        while ($this->isNextAny($tokenIds)) {
+            $this->index++;
         }
     }
 
@@ -93,34 +116,27 @@ class TokenStream
      *
      * @return bool
      */
-    public function isNext(string $tokenName) : bool
+    public function isNext(int $tokenId) : bool
     {
-        $token = $this->moveNext();
-        --$this->index;
-
-        if ($token === null) {
-            return false;
-        }
-
-        return $token->getName() == $tokenName;
+       return $this->peekNext() === $tokenId;
     }
 
     /**
      * Checks if the following tokens in the stream match with the sequence of tokens
      *
-     * @param string[] $tokenNames Sequence of token names
+     * @param int[] $tokenIds Sequence of token ids
      *
      * @return bool
      */
-    public function isNextSequence(array $tokenNames) : bool
+    public function isNextSequence(array $tokenIds) : bool
     {
         $result = true;
         $currentIndex = $this->index;
 
-        foreach ($tokenNames as $tokenName) {
+        foreach ($tokenIds as $id) {
             $token = $this->moveNext();
 
-            if ($token === null || $token->getName() != $tokenName) {
+            if ($token === null || $token->getId() != $id) {
                 $result = false;
 
                 break;
@@ -135,21 +151,16 @@ class TokenStream
     /**
      * Checks if one of the tokens passed as argument is the next token
      *
-     * @param string[] $tokenNames List of token names. e.g: 'T_PLUS', 'T_SUB'
+     * @param int[] $tokenIds List of token names. e.g: 'T_PLUS', 'T_SUB'
      *
      * @return bool
      */
-    public function isNextAny(array $tokenNames) : bool
+    public function isNextAny(array $tokenIds) : bool
     {
-        $token = $this->moveNext();
-        --$this->index;
-
-        if ($token === null) {
-            return false;
-        }
-
-        foreach ($tokenNames as $tokenName) {
-            if ($tokenName === $token->getName()) {
+        $test = $this->peekNext();
+        
+        foreach ($tokenIds as $id) {
+            if ($id === $test) {
                 return true;
             }
         }
